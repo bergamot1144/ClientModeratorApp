@@ -12,7 +12,10 @@ namespace ClientModeratorApp.Models
         public string Password { get; set; }
         public string Role { get; set; } // "Client" или "Moderator"
     }
-    
+    public class UserData
+    {
+        public List<User> Users { get; set; }
+    }
 
 
 }
