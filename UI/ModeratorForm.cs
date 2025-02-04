@@ -1,165 +1,112 @@
 ﻿using System;
 using System.Drawing;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 using System.Windows.Forms;
+using ChatClientApp.Network;
 
 namespace ClientModeratorApp
 {
     public partial class ModeratorForm : Form
     {
-        private TcpClient _tcpClient;        // Сокет для взаимодействия
-        private NetworkStream _stream;       // Поток для чтения/записи
-        private Thread _listenThread;        // Поток, где читаем входящие сообщения
-        private volatile bool _shouldStop;   // Флаг для завершения чтения
+        private readonly ChatClient _chatClient;
+        private readonly string _targetClientName;
 
-        private string _targetClientName;    // Просто отображаем, с кем общаемся
-
-        public ModeratorForm(TcpClient tcpClient, string targetClientName)
+        public ModeratorForm(ChatClient chatClient, string targetClientName)
         {
             InitializeComponent();
-
-            _tcpClient = tcpClient;
-            _stream = _tcpClient.GetStream();    // Получаем основной поток
+            _chatClient = chatClient;
             _targetClientName = targetClientName;
-
-            // Показываем, с кем общаемся
             this.Text = $"Moderator Chat with {_targetClientName}";
 
-            // При запуске все кнопки OFF
+            // При запуске устанавливаем все кнопки в состояние OFF (серый цвет)
             SetAllButtonsOff();
 
-            // Запускаем фоновый поток чтения
-            StartListening();
+            // Подписываемся на событие получения сообщений от сервера
+            _chatClient.MessageReceived += OnMessageReceived;
 
-            // При закрытии формы завершаем поток
+            // Подписываемся на событие закрытия формы для корректного завершения работы
             this.FormClosing += ModeratorForm_FormClosing;
         }
 
-        // Устанавливаем все кнопки в "OFF" (серый цвет)
+        /// <summary>
+        /// Обработчик входящих сообщений.
+        /// Если сообщение начинается с "BUTTON:" – обновляем состояние кнопок,
+        /// иначе отображаем как текстовое сообщение.
+        /// </summary>
+        private void OnMessageReceived(string message)
+        {
+            if (message.StartsWith("BUTTON:"))
+            {
+                // Обработка сообщения изменения состояния кнопок
+                this.Invoke(new Action(() =>
+                {
+                    UpdateButtonState(message);
+                    AddMessageToChat("Клиент: " + message);
+                }));
+            }
+            else
+            {
+                this.Invoke(new Action(() =>
+                {
+                    AddMessageToChat("Собеседник: " + message);
+                }));
+            }
+        }
+
+        /// <summary>
+        /// Обновляет состояние кнопки на форме.
+        /// Ожидается формат: "BUTTON:номер:ON" или "BUTTON:номер:OFF".
+        /// </summary>
+        private void UpdateButtonState(string message)
+        {
+            string[] parts = message.Split(':');
+            if (parts.Length == 3 && parts[0] == "BUTTON" && int.TryParse(parts[1], out int buttonNumber))
+            {
+                bool isOn = parts[2].Equals("ON", StringComparison.OrdinalIgnoreCase);
+                // Поиск кнопки по имени, например, button1, button2, ...
+                Control[] controls = this.Controls.Find($"button{buttonNumber}", true);
+                if (controls.Length > 0 && controls[0] is Button btn)
+                {
+                    btn.BackColor = isOn ? Color.Green : Color.Gray;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Устанавливает все кнопки (button1..button8) в состояние OFF (серый цвет).
+        /// </summary>
         private void SetAllButtonsOff()
         {
-            button1.BackColor = Color.Gray;
-            button2.BackColor = Color.Gray;
-            button3.BackColor = Color.Gray;
-            button4.BackColor = Color.Gray;
-            button5.BackColor = Color.Gray;
-            button6.BackColor = Color.Gray;
-            button7.BackColor = Color.Gray;
-            button8.BackColor = Color.Gray;
-        }
-
-        // Запускаем фоновый поток для чтения сообщений
-        private void StartListening()
-        {
-            _listenThread = new Thread(ListenForMessages);
-            _listenThread.IsBackground = true;
-            _listenThread.Start();
-        }
-
-        // Бесконечное чтение _stream.Read(...) пока не закроем форму
-        private void ListenForMessages()
-        {
-            byte[] buffer = new byte[1024];
-            try
+            for (int i = 1; i <= 8; i++)
             {
-                while (!_shouldStop)
+                Control[] controls = this.Controls.Find($"button{i}", true);
+                if (controls.Length > 0 && controls[0] is Button btn)
                 {
-                    // Читаем из потока
-                    int bytesRead = _stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead == 0)
-                        break; // Сервер разорвал соединение
-
-                    // Декодируем сообщение в строку
-                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    Console.WriteLine("[ModeratorForm] Получено: " + message);
-
-                    // Проверяем, начинается ли сообщение с "BUTTON:"
-                    if (message.StartsWith("BUTTON:"))
-                    {
-                        // Это "кнопочное" сообщение (например, "BUTTON:1:ON")
-                        if (InvokeRequired)
-                        {
-                            // Если поток не UI, делаем Invoke
-                            Invoke(new Action<string>(HandleButtonMessage), message);
-                        }
-                        else
-                        {
-                            HandleButtonMessage(message);
-                        }
-                    }
-                    else
-                    {
-                        // Любое другое сообщение считаем "текстовым"
-                        if (InvokeRequired)
-                        {
-                            Invoke(new Action(() =>
-                            {
-                                AddMessageToChat("Собеседник: " + message);
-                            }));
-                        }
-                        else
-                        {
-                            AddMessageToChat("Собеседник: " + message);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // Если мы сами не устанавливали _shouldStop в true,
-                // логируем ошибку чтения
-                if (!_shouldStop)
-                {
-                    Console.WriteLine("[ModeratorForm] Ошибка чтения: " + ex.Message);
+                    btn.BackColor = Color.Gray;
                 }
             }
         }
 
-
-        // Обработка входящего "BUTTON:номер:ON/OFF" 
-        private void HandleButtonMessage(string buttonMsg)
-        {
-            // Пример: "BUTTON:1:ON"
-            // Можно просто вывести в чат
-            chatTextBox.AppendText("Клиент нажал: " + buttonMsg + Environment.NewLine);
-
-            // Либо, если хотите менять кнопки у модератора,
-            // сделайте логику вроде: UpdateButtonState(buttonMsg);
-        }
-
-        // Метод для добавления текста в чат
+        /// <summary>
+        /// Добавляет сообщение в текстовое поле чата.
+        /// </summary>
         private void AddMessageToChat(string message)
         {
-            string formattedMessage = ">>>>: " + message + Environment.NewLine;
-            chatTextBox.AppendText(formattedMessage);
+            chatTextBox.AppendText(message + Environment.NewLine);
             chatTextBox.SelectionStart = chatTextBox.Text.Length;
             chatTextBox.ScrollToCaret();
         }
 
-        // Отправка текстового сообщения
-        private void SendMessage()
+        /// <summary>
+        /// Обработчик нажатия кнопки Send для отправки текстового сообщения.
+        /// </summary>
+        private async void sendButton_Click(object sender, EventArgs e)
         {
             string message = inputTextBox.Text.Trim();
             if (!string.IsNullOrEmpty(message))
             {
-                try
-                {
-                    byte[] data = Encoding.UTF8.GetBytes(message);
-                    _stream.Write(data, 0, data.Length);
-
-                    AddMessageToChat("Я: " + message);
-                    inputTextBox.Clear();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Ошибка при отправке сообщения: {ex.Message}",
-                                    "Ошибка",
-                                    MessageBoxButtons.OK,
-                                    MessageBoxIcon.Error);
-                }
+                await _chatClient.SendMessageAsync(message);
+                AddMessageToChat("Я: " + message);
+                inputTextBox.Clear();
             }
             else
             {
@@ -170,31 +117,38 @@ namespace ClientModeratorApp
             }
         }
 
-        private void sendButton_Click(object sender, EventArgs e)
-        {
-            SendMessage();
-        }
-
+        /// <summary>
+        /// Обработчик нажатия клавиши в поле ввода сообщений.
+        /// Если нажата клавиша Enter, вызывается отправка сообщения.
+        /// </summary>
         private void inputTextBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                SendMessage();
-                // e.Handled = true;
+                sendButton_Click(sender, e);
+                e.Handled = true;
+                e.SuppressKeyPress = true; // Предотвращает добавление новой строки и системный звук
             }
         }
 
-        // Обработка нажатий на кнопки 1..8 (переключение ON/OFF)
-        private void ToggleButtonState(object sender, int buttonNumber)
+        /// <summary>
+        /// Универсальный обработчик для нажатия кнопок (button1..button8).
+        /// Переключает состояние кнопки и отправляет информацию на сервер.
+        /// </summary>
+        private async void ToggleButtonState(object sender, int buttonNumber)
         {
-            var button = sender as Button;
-            bool isOn = (button.BackColor == Color.Gray);
-            button.BackColor = isOn ? Color.Green : Color.Gray;
-
-            // Отправим состояние на сервер
-            SendButtonState(buttonNumber, isOn);
+            if (sender is Button btn)
+            {
+                bool isOn = (btn.BackColor == Color.Gray);
+                btn.BackColor = isOn ? Color.Green : Color.Gray;
+                string state = isOn ? "ON" : "OFF";
+                string message = $"BUTTON:{buttonNumber}:{state}";
+                await _chatClient.SendMessageAsync(message);
+                AddMessageToChat($"Я нажал кнопку {buttonNumber} -> {state}");
+            }
         }
 
+        // Обработчики кликов для каждой кнопки (предполагается, что они назначены в дизайнере)
         private void button1_Click(object sender, EventArgs e) { ToggleButtonState(sender, 1); }
         private void button2_Click(object sender, EventArgs e) { ToggleButtonState(sender, 2); }
         private void button3_Click(object sender, EventArgs e) { ToggleButtonState(sender, 3); }
@@ -204,53 +158,14 @@ namespace ClientModeratorApp
         private void button7_Click(object sender, EventArgs e) { ToggleButtonState(sender, 7); }
         private void button8_Click(object sender, EventArgs e) { ToggleButtonState(sender, 8); }
 
-        private void SendButtonState(int buttonNumber, bool isOn)
-        {
-            string state = isOn ? "ON" : "OFF";
-            string message = $"BUTTON:{buttonNumber}:{state}";
-
-            // Пишем напрямую в поток
-            try
-            {
-                byte[] data = Encoding.UTF8.GetBytes(message);
-                _stream.Write(data, 0, data.Length);
-
-                // Можно локально отобразить
-                chatTextBox.AppendText($"Я нажал кнопку {buttonNumber} -> {state}\n");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Ошибка при отправке состояния кнопки: " + ex.Message);
-            }
-        }
-
+        /// <summary>
+        /// Обработчик закрытия формы.
+        /// Отписывается от событий и закрывает соединение.
+        /// </summary>
         private void ModeratorForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            var result = MessageBox.Show(
-                "Вы уверены, что хотите выйти из чата?",
-                "Подтверждение выхода",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
-
-            if (result == DialogResult.No)
-            {
-                e.Cancel = true;
-            }
-            else
-            {
-                _shouldStop = true;
-                try
-                {
-                    _stream.Close();
-                    _tcpClient.Close();
-                }
-                catch { }
-
-                if (_listenThread != null && _listenThread.IsAlive)
-                {
-                    _listenThread.Abort();
-                }
-            }
+            _chatClient.MessageReceived -= OnMessageReceived;
+            _chatClient.Disconnect();
         }
     }
 }

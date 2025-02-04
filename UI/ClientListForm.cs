@@ -1,191 +1,92 @@
 ﻿using System;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 using System.Windows.Forms;
+using ChatClientApp.Network;
 
 namespace ClientModeratorApp
 {
     public partial class ClientListForm : Form
     {
-        private TcpClient _tcpClient;          // Сокет модератора
-        private NetworkStream _stream;         // Поток
-        private Thread _listenThread;          // Фоновый поток чтения
-        private volatile bool _shouldStop = false; // флаг для выхода из цикла чтения
+        private readonly ChatClient _chatClient;
 
-        public ClientListForm(TcpClient tcpClient)
+        public ClientListForm(ChatClient chatClient)
         {
             InitializeComponent();
-
-            _tcpClient = tcpClient;
-            _stream = _tcpClient.GetStream();
-
-            // Подписка на FormClosing, чтобы корректно закрыть поток
-            this.FormClosing += ClientListForm_FormClosing;
-
-            // Запускаем «старый» подход чтения
-            StartListening();
+            _chatClient = chatClient;
+            _chatClient.RoomListUpdated += OnRoomListUpdated;
+            Console.WriteLine("[ClientListForm] Подписка на RoomListUpdated выполнена.");
         }
 
-        // Запуск фонового потока, который читает _stream.Read(...)
-        private void StartListening()
+        private void OnRoomListUpdated(string[] rooms)
         {
-            _listenThread = new Thread(ListenForServerMessages);
-            _listenThread.IsBackground = true;
-            _listenThread.Start();
-        }
-
-        // Бесконечное чтение сообщений от сервера
-        private void ListenForServerMessages()
-        {
-            byte[] buffer = new byte[1024];
-            try
+            Console.WriteLine("[ClientListForm] Событие RoomListUpdated вызвано.");
+            if (this.InvokeRequired)
             {
-                while (!_shouldStop)
-                {
-                    int bytesRead = _stream.Read(buffer, 0, buffer.Length);
-                    if (bytesRead == 0) break; // Сервер закрыл соединение
-
-                    string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    Console.WriteLine("[ClientListForm] Получено от сервера: " + message);
-
-                    if (message.StartsWith("CLIENT_LIST:"))
-                    {
-                        // "CLIENT_LIST:c123,Gucci"
-                        string clientList = message.Substring("CLIENT_LIST:".Length);
-                        string[] clientIds = clientList.Split(',');
-                        HandleClientListMessage(clientIds);
-                    }
-                    else if (message.StartsWith("CONNECT_OK:"))
-                    {
-                        // "CONNECT_OK:c123"
-                        string targetClientName = message.Substring("CONNECT_OK:".Length);
-                        OpenModeratorForm(targetClientName);
-                    }
-                    else
-                    {
-                        // Прочие сообщения
-                        Console.WriteLine("[ClientListForm] Необработанное сообщение: " + message);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                if (!_shouldStop)
-                {
-                    Console.WriteLine("[ClientListForm] Ошибка чтения: " + ex.Message);
-                }
-            }
-        }
-
-        // Метод, обновляющий список клиентов в ListBox
-        private void HandleClientListMessage(string[] clientIds)
-        {
-            if (InvokeRequired)
-            {
-                Invoke(new Action<string[]>(HandleClientListMessage), clientIds);
-                return;
-            }
-            clientbox.Items.Clear();
-            if (clientIds.Length == 0)
-            {
-                MessageBox.Show("Нет доступных клиентов.");
+                this.Invoke(new Action(() => UpdateRoomBox(rooms)));
             }
             else
             {
-                foreach (string client in clientIds)
-                {
-                    if (!string.IsNullOrEmpty(client))
-                        clientbox.Items.Add(client);
-                }
+                UpdateRoomBox(rooms);
             }
         }
 
-        // Открытие ModeratorForm
-        private void OpenModeratorForm(string targetClientName)
+        private void UpdateRoomBox(string[] rooms)
         {
-            if (InvokeRequired)
+            clientbox.Items.Clear();
+            if (rooms != null && rooms.Length > 0)
             {
-                Invoke(new Action<string>(OpenModeratorForm), targetClientName);
-                return;
+                clientbox.Items.AddRange(rooms);
+                Console.WriteLine("[ClientListForm] clientbox обновлён: " + string.Join(", ", rooms));
+
+                // Добавляем окно с информацией, чтобы увидеть, что метод UpdateRoomBox был вызван.
+                MessageBox.Show("UpdateRoomBox called: " + string.Join(", ", rooms),
+                                "DEBUG: ClientListForm.UpdateRoomBox",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
             }
-            // Открываем форму модератора, передав тот же TcpClient (тот же поток)
-            // и имя клиента, к которому модератор подключился
-            ModeratorForm modForm = new ModeratorForm(_tcpClient, targetClientName);
-            modForm.Show();
+            else
+            {
+                clientbox.Items.Add("Нет доступных комнат.");
+                Console.WriteLine("[ClientListForm] clientbox обновлён: список пуст.");
+
+                MessageBox.Show("UpdateRoomBox called: empty list",
+                                "DEBUG: ClientListForm.UpdateRoomBox",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Information);
+            }
         }
 
-        // Нажатие кнопки "Connect"
+        private async void buttonRefresh_Click(object sender, EventArgs e)
+        {
+            Console.WriteLine("[ClientListForm] Нажата кнопка Refresh. Отправка команды CLIENT_LIST.");
+            await _chatClient.SendMessageAsync("CLIENT_LIST");
+        }
+
         private void button_connect_Click(object sender, EventArgs e)
         {
             if (clientbox.SelectedItem == null)
             {
-                MessageBox.Show("Пожалуйста, выберите клиента для подключения.");
+                MessageBox.Show("Пожалуйста, выберите комнату для подключения.");
                 return;
             }
-
-            string selectedClient = clientbox.SelectedItem.ToString();
-
-            // Отправляем "CONNECT:c123"
-            string message = $"CONNECT:{selectedClient}";
-            byte[] data = Encoding.UTF8.GetBytes(message);
-            _stream.Write(data, 0, data.Length);
-
-            MessageBox.Show($"Запрошено подключение к {selectedClient}");
-        }
-
-        // Нажатие кнопки Refresh - запрашиваем список клиентов
-        private void buttonRefresh_Click(object sender, EventArgs e)
-        {
-            string request = "CLIENT_LIST";
-            byte[] data = Encoding.UTF8.GetBytes(request);
-            _stream.Write(data, 0, data.Length);
-
-            Console.WriteLine("[ClientListForm] Отправлен запрос CLIENT_LIST на сервер.");
+            string selectedRoom = clientbox.SelectedItem.ToString();
+            Console.WriteLine("[ClientListForm] Нажата кнопка Connect. Выбрана комната: " + selectedRoom);
+            _chatClient.SendMessageAsync("CONNECT:" + selectedRoom);
         }
 
         private void buttonTest_Click(object sender, EventArgs e)
         {
             clientbox.Items.Clear();
-            clientbox.Items.Add("TestUser1");
-            clientbox.Items.Add("TestUser2");
-            clientbox.Items.Add("TestUser3");
+            clientbox.Items.Add("TestRoom1");
+            clientbox.Items.Add("TestRoom2");
+            clientbox.Items.Add("TestRoom3");
+            Console.WriteLine("[ClientListForm] Нажата кнопка Test. ListBox заполнен тестовыми значениями.");
         }
 
-        private void exitButton_Click(object sender, EventArgs e)
-        {
-            this.Close(); // Вызывает FormClosing
-        }
-
-        // Событие FormClosing для корректного завершения
         private void ClientListForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            var result = MessageBox.Show("Вы уверены, что хотите выйти?",
-                                         "Подтверждение выхода",
-                                         MessageBoxButtons.YesNo,
-                                         MessageBoxIcon.Question);
-            if (result == DialogResult.No)
-            {
-                e.Cancel = true;
-            }
-            else
-            {
-                // Останавливаем поток
-                _shouldStop = true;
-                try
-                {
-                    _stream.Close();
-                    _tcpClient.Close();
-                }
-                catch { }
-
-                if (_listenThread != null && _listenThread.IsAlive)
-                {
-                    _listenThread.Abort();
-                }
-
-                Application.Exit(); // Выходим из приложения
-            }
+            _chatClient.RoomListUpdated -= OnRoomListUpdated;
+            _chatClient.Disconnect();
+            Console.WriteLine("[ClientListForm] Форма закрывается. Отписка и отключение выполнены.");
         }
     }
 }

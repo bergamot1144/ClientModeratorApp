@@ -40,18 +40,22 @@
             this.inputTextBox = new System.Windows.Forms.TextBox();
             this.chatTextBox = new System.Windows.Forms.RichTextBox();
             this.DisconnectButton = new System.Windows.Forms.Button();
+            this.button9 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // button1
             // 
             this.button1.BackColor = System.Drawing.Color.Azure;
+            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.button1.Image = global::ClientModeratorApp.Properties.Resources.png_ass;
             this.button1.Location = new System.Drawing.Point(60, 531);
             this.button1.Margin = new System.Windows.Forms.Padding(2);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(98, 88);
             this.button1.TabIndex = 0;
             this.button1.Text = "1";
+            this.button1.TextImageRelation = System.Windows.Forms.TextImageRelation.TextAboveImage;
             this.button1.UseVisualStyleBackColor = false;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
@@ -59,7 +63,7 @@
             // 
             this.button2.BackColor = System.Drawing.Color.Azure;
             this.button2.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button2.Location = new System.Drawing.Point(188, 531);
+            this.button2.Location = new System.Drawing.Point(187, 531);
             this.button2.Margin = new System.Windows.Forms.Padding(2);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(98, 88);
@@ -72,7 +76,7 @@
             // 
             this.button3.BackColor = System.Drawing.Color.Azure;
             this.button3.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button3.Location = new System.Drawing.Point(315, 531);
+            this.button3.Location = new System.Drawing.Point(314, 531);
             this.button3.Margin = new System.Windows.Forms.Padding(2);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(98, 88);
@@ -85,7 +89,7 @@
             // 
             this.button4.BackColor = System.Drawing.Color.Azure;
             this.button4.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button4.Location = new System.Drawing.Point(442, 531);
+            this.button4.Location = new System.Drawing.Point(433, 531);
             this.button4.Margin = new System.Windows.Forms.Padding(2);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(98, 88);
@@ -98,7 +102,7 @@
             // 
             this.button5.BackColor = System.Drawing.Color.Azure;
             this.button5.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button5.Location = new System.Drawing.Point(60, 653);
+            this.button5.Location = new System.Drawing.Point(561, 531);
             this.button5.Margin = new System.Windows.Forms.Padding(2);
             this.button5.Name = "button5";
             this.button5.Size = new System.Drawing.Size(98, 88);
@@ -111,7 +115,7 @@
             // 
             this.button6.BackColor = System.Drawing.Color.Azure;
             this.button6.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button6.Location = new System.Drawing.Point(188, 653);
+            this.button6.Location = new System.Drawing.Point(60, 646);
             this.button6.Margin = new System.Windows.Forms.Padding(2);
             this.button6.Name = "button6";
             this.button6.Size = new System.Drawing.Size(98, 88);
@@ -124,7 +128,7 @@
             // 
             this.button7.BackColor = System.Drawing.Color.Azure;
             this.button7.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button7.Location = new System.Drawing.Point(315, 653);
+            this.button7.Location = new System.Drawing.Point(187, 646);
             this.button7.Margin = new System.Windows.Forms.Padding(2);
             this.button7.Name = "button7";
             this.button7.Size = new System.Drawing.Size(98, 88);
@@ -137,7 +141,7 @@
             // 
             this.button8.BackColor = System.Drawing.Color.Azure;
             this.button8.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button8.Location = new System.Drawing.Point(442, 653);
+            this.button8.Location = new System.Drawing.Point(314, 646);
             this.button8.Margin = new System.Windows.Forms.Padding(2);
             this.button8.Name = "button8";
             this.button8.Size = new System.Drawing.Size(98, 88);
@@ -189,6 +193,18 @@
             this.DisconnectButton.Text = "Disconnect";
             this.DisconnectButton.UseVisualStyleBackColor = false;
             // 
+            // button9
+            // 
+            this.button9.BackColor = System.Drawing.Color.Azure;
+            this.button9.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.button9.Location = new System.Drawing.Point(433, 646);
+            this.button9.Margin = new System.Windows.Forms.Padding(2);
+            this.button9.Name = "button9";
+            this.button9.Size = new System.Drawing.Size(98, 88);
+            this.button9.TabIndex = 16;
+            this.button9.Text = "9";
+            this.button9.UseVisualStyleBackColor = false;
+            // 
             // ModeratorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -196,7 +212,8 @@
             this.BackColor = System.Drawing.Color.DarkSlateGray;
             this.BackgroundImage = global::ClientModeratorApp.Properties.Resources.background;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.ClientSize = new System.Drawing.Size(591, 774);
+            this.ClientSize = new System.Drawing.Size(749, 774);
+            this.Controls.Add(this.button9);
             this.Controls.Add(this.DisconnectButton);
             this.Controls.Add(this.chatTextBox);
             this.Controls.Add(this.inputTextBox);
@@ -231,5 +248,6 @@
         private System.Windows.Forms.TextBox inputTextBox;
         private System.Windows.Forms.RichTextBox chatTextBox;
         private System.Windows.Forms.Button DisconnectButton;
+        private System.Windows.Forms.Button button9;
     }
 }
