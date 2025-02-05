@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms; // Добавьте, чтобы использовать MessageBox
+using System.Windows.Forms; // для MessageBox, если нужно
 
 namespace ChatClientApp.Network
 {
@@ -20,6 +20,7 @@ namespace ChatClientApp.Network
 
         // События для передачи данных в формы
         public event Action<string> MessageReceived;
+        // Добавляем событие RoomListUpdated
         public event Action<string[]> RoomListUpdated;
 
         public ChatClient(string ipAddress, int port)
@@ -68,17 +69,14 @@ namespace ChatClientApp.Network
             }
         }
 
-
-
-
         private void ProcessMessage(string message)
         {
             message = message.Trim();
             Console.WriteLine($"[ChatClient] ProcessMessage: '{message}'");
 
-            // Для отладки: показываем MessageBox, если сообщение начинается с ROOM_LIST
-            if (message.StartsWith("ROOM_LIST:"))
+            if (message.StartsWith("ROOM_LIST:", StringComparison.OrdinalIgnoreCase))
             {
+                // Извлекаем список комнат (или активных клиентов)
                 string roomsStr = message.Substring("ROOM_LIST:".Length);
                 string[] rooms = roomsStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                 for (int i = 0; i < rooms.Length; i++)
@@ -86,26 +84,15 @@ namespace ChatClientApp.Network
                     rooms[i] = rooms[i].Trim();
                 }
                 Console.WriteLine($"[ChatClient] Получен список комнат: {string.Join(" | ", rooms)}");
-
-                // Показываем диалоговое окно, чтобы увидеть, что событие точно произошло.
-                // Если вы это окно НЕ увидите, значит сообщение не дошло или нет \n в конце.
-                MessageBox.Show("Room list updated: " + string.Join(", ", rooms),
-                                "DEBUG: ChatClient.ProcessMessage",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Information);
-
+                // Вызываем событие RoomListUpdated
                 RoomListUpdated?.Invoke(rooms);
             }
             else
             {
-                // Прочие сообщения
                 MessageReceived?.Invoke(message);
             }
         }
 
-        /// <summary>
-        /// Отправляем сообщение на сервер с переводом строки.
-        /// </summary>
         public async Task SendMessageAsync(string message)
         {
             if (!IsConnected)

@@ -14,46 +14,41 @@ namespace ClientModeratorApp
             _chatClient = chatClient;
             _chatClient.RoomListUpdated += OnRoomListUpdated;
             Console.WriteLine("[ClientListForm] Подписка на RoomListUpdated выполнена.");
+
+            // Если до получения данных список пустой, сразу устанавливаем значение по умолчанию:
+            UpdateClientBox(null);
         }
+
 
         private void OnRoomListUpdated(string[] rooms)
         {
             Console.WriteLine("[ClientListForm] Событие RoomListUpdated вызвано.");
             if (this.InvokeRequired)
             {
-                this.Invoke(new Action(() => UpdateRoomBox(rooms)));
+                this.Invoke(new Action(() => UpdateClientBox(rooms)));
             }
             else
             {
-                UpdateRoomBox(rooms);
+                UpdateClientBox(rooms);
             }
         }
 
-        private void UpdateRoomBox(string[] rooms)
+
+        private void UpdateClientBox(string[] items)
         {
             clientbox.Items.Clear();
-            if (rooms != null && rooms.Length > 0)
+            if (items != null && items.Length > 0)
             {
-                clientbox.Items.AddRange(rooms);
-                Console.WriteLine("[ClientListForm] clientbox обновлён: " + string.Join(", ", rooms));
-
-                // Добавляем окно с информацией, чтобы увидеть, что метод UpdateRoomBox был вызван.
-                MessageBox.Show("UpdateRoomBox called: " + string.Join(", ", rooms),
-                                "DEBUG: ClientListForm.UpdateRoomBox",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Information);
+                clientbox.Items.AddRange(items);
+                Console.WriteLine("[ClientListForm] ListBox updated with: " + string.Join(", ", items));
             }
             else
             {
-                clientbox.Items.Add("Нет доступных комнат.");
-                Console.WriteLine("[ClientListForm] clientbox обновлён: список пуст.");
-
-                MessageBox.Show("UpdateRoomBox called: empty list",
-                                "DEBUG: ClientListForm.UpdateRoomBox",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Information);
+                clientbox.Items.Add("Нет активных клиентов.");
+                Console.WriteLine("[ClientListForm] ListBox updated with default message: Нет активных клиентов.");
             }
         }
+
 
         private async void buttonRefresh_Click(object sender, EventArgs e)
         {
@@ -65,20 +60,20 @@ namespace ClientModeratorApp
         {
             if (clientbox.SelectedItem == null)
             {
-                MessageBox.Show("Пожалуйста, выберите комнату для подключения.");
+                MessageBox.Show("Пожалуйста, выберите клиента для подключения.");
                 return;
             }
-            string selectedRoom = clientbox.SelectedItem.ToString();
-            Console.WriteLine("[ClientListForm] Нажата кнопка Connect. Выбрана комната: " + selectedRoom);
-            _chatClient.SendMessageAsync("CONNECT:" + selectedRoom);
+            string selectedClient = clientbox.SelectedItem.ToString();
+            Console.WriteLine("[ClientListForm] Нажата кнопка Connect. Выбран клиент: " + selectedClient);
+            _chatClient.SendMessageAsync("CONNECT:" + selectedClient);
         }
 
         private void buttonTest_Click(object sender, EventArgs e)
         {
             clientbox.Items.Clear();
-            clientbox.Items.Add("TestRoom1");
-            clientbox.Items.Add("TestRoom2");
-            clientbox.Items.Add("TestRoom3");
+            clientbox.Items.Add("TestClient1");
+            clientbox.Items.Add("TestClient2");
+            clientbox.Items.Add("TestClient3");
             Console.WriteLine("[ClientListForm] Нажата кнопка Test. ListBox заполнен тестовыми значениями.");
         }
 
