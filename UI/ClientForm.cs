@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 using System.Windows.Forms;
 using ChatClientApp.Network;
 
@@ -19,8 +18,6 @@ namespace ClientModeratorApp
 
         private void OnMessageReceived(string message)
         {
-            // Если сообщение начинается с "BUTTON:" – можно добавить отдельную обработку,
-            // здесь же для клиента считаем все сообщения текстовыми.
             this.Invoke(new Action(() =>
             {
                 AddMessageToChat("Собеседник: " + message);

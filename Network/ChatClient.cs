@@ -4,10 +4,14 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms; // для MessageBox, если нужно
+using System.Windows.Forms;
 
 namespace ChatClientApp.Network
 {
+    /// <summary>
+    /// Класс для сетевого взаимодействия. Он устанавливает соединение с сервером,
+    /// читает строки через ReadLineAsync и генерирует события для форм.
+    /// </summary>
     public class ChatClient : IDisposable
     {
         private TcpClient _tcpClient;
@@ -18,10 +22,12 @@ namespace ChatClientApp.Network
 
         public bool IsConnected => _tcpClient != null && _tcpClient.Connected;
 
-        // События для передачи данных в формы
+        // События для передачи сообщений в UI
         public event Action<string> MessageReceived;
-        // Добавляем событие RoomListUpdated
-        public event Action<string[]> RoomListUpdated;
+        // Событие для обновления списка активных клиентов (от сервера отправляется "CLIENT_LIST:...")
+        public event Action<string[]> ActiveClientsUpdated;
+        // Если сервер использует другой префикс, например "ROOM_LIST:", можно добавить событие RoomListUpdated,
+        // но в этом решении сервер отправляет "CLIENT_LIST:" для активных клиентов.
 
         public ChatClient(string ipAddress, int port)
         {
@@ -74,18 +80,16 @@ namespace ChatClientApp.Network
             message = message.Trim();
             Console.WriteLine($"[ChatClient] ProcessMessage: '{message}'");
 
-            if (message.StartsWith("ROOM_LIST:", StringComparison.OrdinalIgnoreCase))
+            if (message.StartsWith("CLIENT_LIST:", StringComparison.OrdinalIgnoreCase))
             {
-                // Извлекаем список комнат (или активных клиентов)
-                string roomsStr = message.Substring("ROOM_LIST:".Length);
-                string[] rooms = roomsStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                for (int i = 0; i < rooms.Length; i++)
+                string clientsStr = message.Substring("CLIENT_LIST:".Length);
+                string[] clients = clientsStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < clients.Length; i++)
                 {
-                    rooms[i] = rooms[i].Trim();
+                    clients[i] = clients[i].Trim();
                 }
-                Console.WriteLine($"[ChatClient] Получен список комнат: {string.Join(" | ", rooms)}");
-                // Вызываем событие RoomListUpdated
-                RoomListUpdated?.Invoke(rooms);
+                Console.WriteLine($"[ChatClient] Получен список активных клиентов: {string.Join(" | ", clients)}");
+                ActiveClientsUpdated?.Invoke(clients);
             }
             else
             {

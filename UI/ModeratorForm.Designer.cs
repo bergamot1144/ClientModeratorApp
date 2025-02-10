@@ -41,14 +41,13 @@
             this.chatTextBox = new System.Windows.Forms.RichTextBox();
             this.DisconnectButton = new System.Windows.Forms.Button();
             this.button9 = new System.Windows.Forms.Button();
+            this.button10 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // button1
             // 
             this.button1.BackColor = System.Drawing.Color.Azure;
-            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.button1.Image = global::ClientModeratorApp.Properties.Resources.png_ass;
             this.button1.Location = new System.Drawing.Point(60, 531);
             this.button1.Margin = new System.Windows.Forms.Padding(2);
             this.button1.Name = "button1";
@@ -152,8 +151,8 @@
             // 
             // sendButton
             // 
-            this.sendButton.BackColor = System.Drawing.Color.SteelBlue;
-            this.sendButton.Location = new System.Drawing.Point(478, 405);
+            this.sendButton.BackColor = System.Drawing.SystemColors.ActiveCaption;
+            this.sendButton.Location = new System.Drawing.Point(597, 405);
             this.sendButton.Margin = new System.Windows.Forms.Padding(2);
             this.sendButton.Name = "sendButton";
             this.sendButton.Size = new System.Drawing.Size(85, 50);
@@ -167,7 +166,7 @@
             this.inputTextBox.Location = new System.Drawing.Point(22, 421);
             this.inputTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.inputTextBox.Name = "inputTextBox";
-            this.inputTextBox.Size = new System.Drawing.Size(444, 20);
+            this.inputTextBox.Size = new System.Drawing.Size(545, 20);
             this.inputTextBox.TabIndex = 12;
             this.inputTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.inputTextBox_KeyDown);
             // 
@@ -178,7 +177,7 @@
             this.chatTextBox.Location = new System.Drawing.Point(31, 68);
             this.chatTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.chatTextBox.Name = "chatTextBox";
-            this.chatTextBox.Size = new System.Drawing.Size(533, 318);
+            this.chatTextBox.Size = new System.Drawing.Size(639, 318);
             this.chatTextBox.TabIndex = 14;
             this.chatTextBox.Text = "";
             // 
@@ -186,7 +185,7 @@
             // 
             this.DisconnectButton.BackColor = System.Drawing.Color.MediumBlue;
             this.DisconnectButton.ForeColor = System.Drawing.SystemColors.Control;
-            this.DisconnectButton.Location = new System.Drawing.Point(471, 24);
+            this.DisconnectButton.Location = new System.Drawing.Point(630, 21);
             this.DisconnectButton.Name = "DisconnectButton";
             this.DisconnectButton.Size = new System.Drawing.Size(96, 23);
             this.DisconnectButton.TabIndex = 15;
@@ -205,6 +204,18 @@
             this.button9.Text = "9";
             this.button9.UseVisualStyleBackColor = false;
             // 
+            // button10
+            // 
+            this.button10.BackColor = System.Drawing.Color.Azure;
+            this.button10.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.button10.Location = new System.Drawing.Point(561, 646);
+            this.button10.Margin = new System.Windows.Forms.Padding(2);
+            this.button10.Name = "button10";
+            this.button10.Size = new System.Drawing.Size(98, 88);
+            this.button10.TabIndex = 27;
+            this.button10.Text = "10";
+            this.button10.UseVisualStyleBackColor = false;
+            // 
             // ModeratorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -213,6 +224,7 @@
             this.BackgroundImage = global::ClientModeratorApp.Properties.Resources.background;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(749, 774);
+            this.Controls.Add(this.button10);
             this.Controls.Add(this.button9);
             this.Controls.Add(this.DisconnectButton);
             this.Controls.Add(this.chatTextBox);
@@ -249,5 +261,6 @@
         private System.Windows.Forms.RichTextBox chatTextBox;
         private System.Windows.Forms.Button DisconnectButton;
         private System.Windows.Forms.Button button9;
+        private System.Windows.Forms.Button button10;
     }
 }

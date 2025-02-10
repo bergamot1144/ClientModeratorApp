@@ -2,15 +2,12 @@
 {
     partial class ClientListForm
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
+        private System.Windows.Forms.ListBox clientbox;
+        private System.Windows.Forms.Button button_connect;
+        private System.Windows.Forms.Button buttonTest;
+        private System.Windows.Forms.Button buttonRefresh;
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -22,10 +19,6 @@
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             this.clientbox = new System.Windows.Forms.ListBox();
@@ -74,7 +67,6 @@
             this.buttonRefresh.Text = "refresh";
             this.buttonRefresh.UseVisualStyleBackColor = true;
             this.buttonRefresh.Click += new System.EventHandler(this.buttonRefresh_Click);
-
             // 
             // ClientListForm
             // 
@@ -89,14 +81,8 @@
             this.Name = "ClientListForm";
             this.Text = "chatVA ClientListForm v0.0.1";
             this.ResumeLayout(false);
-
         }
 
         #endregion
-
-        private System.Windows.Forms.ListBox clientbox;
-        private System.Windows.Forms.Button button_connect;
-        private System.Windows.Forms.Button buttonTest;
-        private System.Windows.Forms.Button buttonRefresh;
     }
 }

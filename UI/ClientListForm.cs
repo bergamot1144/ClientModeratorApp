@@ -12,50 +12,47 @@ namespace ClientModeratorApp
         {
             InitializeComponent();
             _chatClient = chatClient;
-            _chatClient.RoomListUpdated += OnRoomListUpdated;
-            Console.WriteLine("[ClientListForm] Подписка на RoomListUpdated выполнена.");
-
-            // Если до получения данных список пустой, сразу устанавливаем значение по умолчанию:
-            UpdateClientBox(null);
+            // Подписываемся на событие обновления списка активных клиентов
+            _chatClient.ActiveClientsUpdated += OnActiveClientsUpdated;
+            Console.WriteLine("[ClientListForm] Подписка на ActiveClientsUpdated выполнена.");
         }
 
-
-        private void OnRoomListUpdated(string[] rooms)
+        private void OnActiveClientsUpdated(string[] clients)
         {
-            Console.WriteLine("[ClientListForm] Событие RoomListUpdated вызвано.");
+            Console.WriteLine("[ClientListForm] Событие ActiveClientsUpdated вызвано.");
             if (this.InvokeRequired)
             {
-                this.Invoke(new Action(() => UpdateClientBox(rooms)));
+                this.Invoke(new Action(() => UpdateClientBox(clients)));
             }
             else
             {
-                UpdateClientBox(rooms);
+                UpdateClientBox(clients);
             }
         }
 
-
-        private void UpdateClientBox(string[] items)
+        private void UpdateClientBox(string[] clients)
         {
             clientbox.Items.Clear();
-            if (items != null && items.Length > 0)
+            if (clients != null && clients.Length > 0)
             {
-                clientbox.Items.AddRange(items);
-                Console.WriteLine("[ClientListForm] ListBox updated with: " + string.Join(", ", items));
+                clientbox.Items.AddRange(clients);
+                Console.WriteLine("[ClientListForm] ListBox обновлён: " + string.Join(", ", clients));
             }
             else
             {
                 clientbox.Items.Add("Нет активных клиентов.");
-                Console.WriteLine("[ClientListForm] ListBox updated with default message: Нет активных клиентов.");
+                Console.WriteLine("[ClientListForm] ListBox обновлён: список пуст.");
             }
         }
 
-
+        // Обработчик кнопки Refresh для принудительного запроса списка активных клиентов.
         private async void buttonRefresh_Click(object sender, EventArgs e)
         {
             Console.WriteLine("[ClientListForm] Нажата кнопка Refresh. Отправка команды CLIENT_LIST.");
             await _chatClient.SendMessageAsync("CLIENT_LIST");
         }
 
+        // Обработчик кнопки Connect для подключения модератора к выбранному клиенту.
         private void button_connect_Click(object sender, EventArgs e)
         {
             if (clientbox.SelectedItem == null)
@@ -79,7 +76,7 @@ namespace ClientModeratorApp
 
         private void ClientListForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            _chatClient.RoomListUpdated -= OnRoomListUpdated;
+            _chatClient.ActiveClientsUpdated -= OnActiveClientsUpdated;
             _chatClient.Disconnect();
             Console.WriteLine("[ClientListForm] Форма закрывается. Отписка и отключение выполнены.");
         }
