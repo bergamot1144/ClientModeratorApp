@@ -208,5 +208,32 @@
   <ItemGroup>
     <None Include="Resources\background.jpg" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\png_ass.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\png_banana.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\png_body.JPG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\png_boobs.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\png_foot.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\png_hand.JPG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\png_hotheart.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\png_keyboard.PNG" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\png_kiss.PNG" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

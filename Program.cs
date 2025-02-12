@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Windows.Forms;
-using ChatClientApp.Network; // Пространство имен для ChatClient
+using ChatClientApp.Network;
 
 namespace ClientModeratorApp
 {
-    internal static class Program
+    static class Program
     {
         [STAThread]
         static void Main()
         {
-            ChatClient chatClient = new ChatClient("127.0.0.1", 9000); // Подключаемся сразу
+            ChatClient chatClient = new ChatClient("127.0.0.1", 9000);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new LoginForm()); // Передаём клиента в LoginForm
-
+            Application.Run(new LoginForm(chatClient));
         }
     }
 }

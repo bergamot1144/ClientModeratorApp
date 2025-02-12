@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -7,156 +8,121 @@ using System.Windows.Forms;
 
 namespace ChatClientApp.Network
 {
-    public class ChatClient
+    /// <summary>
+    /// Класс для сетевого взаимодействия. Он устанавливает соединение с сервером,
+    /// читает строки через ReadLineAsync и генерирует события для форм.
+    /// </summary>
+    public class ChatClient : IDisposable
     {
         private TcpClient _tcpClient;
-        private NetworkStream _stream;
+        private StreamReader _reader;
+        private StreamWriter _writer;
         private CancellationTokenSource _cts;
         private Task _listenTask;
 
-        public TcpClient TcpClient => _tcpClient;
-
-        public event Action<string> MessageReceived;
-
         public bool IsConnected => _tcpClient != null && _tcpClient.Connected;
+
+        // События для передачи сообщений в UI
+        public event Action<string> MessageReceived;
+        // Событие для обновления списка активных клиентов (от сервера отправляется "CLIENT_LIST:...")
+        public event Action<string[]> ActiveClientsUpdated;
+        // Если сервер использует другой префикс, например "ROOM_LIST:", можно добавить событие RoomListUpdated,
+        // но в этом решении сервер отправляет "CLIENT_LIST:" для активных клиентов.
 
         public ChatClient(string ipAddress, int port)
         {
-            Connect(ipAddress, port);
-        }
-
-        public void SendMessage(string message)
-        {
             try
             {
-                byte[] data = Encoding.UTF8.GetBytes(message);
-                _stream.Write(data, 0, data.Length);
-                Console.WriteLine("Отправлено: " + message);
+                _tcpClient = new TcpClient();
+                _tcpClient.Connect(ipAddress, port);
+                var ns = _tcpClient.GetStream();
+                _reader = new StreamReader(ns, Encoding.UTF8);
+                _writer = new StreamWriter(ns, Encoding.UTF8) { AutoFlush = true };
+                _cts = new CancellationTokenSource();
+                _listenTask = ListenAsync(_cts.Token);
+                Console.WriteLine($"[ChatClient] Подключен к серверу {ipAddress}:{port}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Ошибка отправки сообщения: " + ex.Message);
+                Console.WriteLine($"[ChatClient] Ошибка подключения: {ex.Message}");
             }
         }
 
-        private async Task ListenForMessagesAsync(CancellationToken token)
+        private async Task ListenAsync(CancellationToken token)
         {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-
             try
             {
                 while (!token.IsCancellationRequested)
                 {
-                    if (_stream.DataAvailable)
+                    Console.WriteLine("[ChatClient] ListenAsync: ожидаем ReadLineAsync...");
+                    string line = await _reader.ReadLineAsync();
+                    if (line == null)
                     {
-                        bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length, token);
-                        string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                        Console.WriteLine("Получено: " + message);
-
-                        if (message.StartsWith("CLIENT_LIST:"))
-                        {
-                            HandleClientList(message);
-                        }
-                        else if (message.StartsWith("CONNECT:"))
-                        {
-                            HandleConnection(message);
-                        }
-                        else
-                        {
-                            MessageReceived?.Invoke(message);
-                        }
+                        Console.WriteLine("[ChatClient] ListenAsync: прочитано null — сервер закрыл соединение.");
+                        break;
                     }
-                    else
-                    {
-                        await Task.Delay(100, token); // Даем процессору отдохнуть
-                    }
+                    Console.WriteLine("[ChatClient] ListenAsync: прочитана строка: " + line);
+                    ProcessMessage(line);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("[ChatClient] ListenAsync: отменено.");
             }
             catch (Exception ex)
             {
-                if (!token.IsCancellationRequested)
+                Console.WriteLine($"[ChatClient] Ошибка в ListenAsync: {ex.Message}");
+            }
+        }
+
+        private void ProcessMessage(string message)
+        {
+            message = message.Trim();
+            Console.WriteLine($"[ChatClient] ProcessMessage: '{message}'");
+
+            if (message.StartsWith("CLIENT_LIST:", StringComparison.OrdinalIgnoreCase))
+            {
+                string clientsStr = message.Substring("CLIENT_LIST:".Length);
+                string[] clients = clientsStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < clients.Length; i++)
                 {
-                    Console.WriteLine("Ошибка получения сообщения: " + ex.Message);
+                    clients[i] = clients[i].Trim();
                 }
-            }
-        }
-
-
-        public event Action<string[]> ClientListUpdated;
-        private void HandleClientList(string message)
-        {
-            string[] clients = message.Substring("CLIENT_LIST:".Length).Split(',');
-            Console.WriteLine("Список клиентов:");
-            foreach (var client in clients)
-            {
-                Console.WriteLine(client);
-            }
-            ClientListUpdated?.Invoke(clients); // Вызываем событие
-        }
-
-        private void HandleConnection(string message)
-        {
-            string[] parts = message.Split(':');
-            if (parts.Length == 2)
-            {
-                string targetClientId = parts[1];
-                Console.WriteLine($"Вы подключены к клиенту {targetClientId}");
-            }
-        }
-        public void UpdateClientList(string[] clientIds, ListBox clientbox)
-        {
-            clientbox.Items.Clear();
-
-            if (clientIds.Length == 0)
-            {
-                MessageBox.Show("Нет доступных клиентов.", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                Console.WriteLine($"[ChatClient] Получен список активных клиентов: {string.Join(" | ", clients)}");
+                ActiveClientsUpdated?.Invoke(clients);
             }
             else
             {
-                foreach (var clientId in clientIds)
-                {
-                    clientbox.Items.Add(clientId);
-                }
+                MessageReceived?.Invoke(message);
             }
         }
 
-
-        public void Connect(string ipAddress, int port)
+        public async Task SendMessageAsync(string message)
         {
+            if (!IsConnected)
+                return;
             try
             {
-                Console.WriteLine("Попытка подключиться к серверу...");
-
-                _tcpClient = new TcpClient();
-                _tcpClient.Connect(ipAddress, port);
-                Console.WriteLine($"Подключен к серверу {ipAddress}:{port}");
-                _stream = _tcpClient.GetStream();
-
-                _cts = new CancellationTokenSource();
-                _listenTask = ListenForMessagesAsync(_cts.Token);
-            }
-            catch (SocketException se)
-            {
-                Console.WriteLine("Ошибка сокета при подключении: " + se.Message);
+                await _writer.WriteLineAsync(message);
+                Console.WriteLine($"[ChatClient] Отправлено: {message}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Ошибка подключения: " + ex.Message);
+                Console.WriteLine($"[ChatClient] Ошибка отправки сообщения: {ex.Message}");
             }
         }
 
         public void Disconnect()
         {
-            if (_tcpClient != null && _tcpClient.Connected)
-            {
-                _cts?.Cancel(); // Останавливаем поток
-                _listenTask?.Wait(); // Ожидаем завершения задачи
+            _cts.Cancel();
+            try { _tcpClient.Close(); } catch { }
+            Console.WriteLine("[ChatClient] Клиент отключен.");
+        }
 
-                _stream.Close();
-                _tcpClient.Close();
-                Console.WriteLine("Клиент отключен.");
-            }
+        public void Dispose()
+        {
+            Disconnect();
+            _cts.Dispose();
         }
     }
 }
