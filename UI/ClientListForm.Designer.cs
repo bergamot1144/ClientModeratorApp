@@ -35,7 +35,6 @@
             this.clientbox.Name = "clientbox";
             this.clientbox.Size = new System.Drawing.Size(288, 290);
             this.clientbox.TabIndex = 0;
-            this.Controls.Add(this.clientbox);
             // 
             // button_connect
             // 
@@ -80,7 +79,9 @@
             this.Margin = new System.Windows.Forms.Padding(2);
             this.Name = "ClientListForm";
             this.Text = "chatVA ClientListForm v0.0.1";
+            this.Load += new System.EventHandler(this.ClientListForm_Load);
             this.ResumeLayout(false);
+
         }
 
         #endregion

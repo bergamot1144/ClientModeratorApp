@@ -64,5 +64,10 @@ namespace ClientModeratorApp
             _chatClient.MessageReceived -= OnMessageReceived;
             _chatClient.Disconnect();
         }
+
+        private void ClientForm_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }
